@@ -1,0 +1,1 @@
+dotnet ef dbcontext scaffold "Server=localhost;Database=chatapp;Trusted_Connection=True;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer -o model -c AppDbContext --force
