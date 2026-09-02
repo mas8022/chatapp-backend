@@ -39,6 +39,10 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValueSql("(getdate())", "DF_Message_CreatedAt")
                 .HasColumnType("datetime");
             entity.Property(e => e.MediaUrl).HasMaxLength(2048);
+
+            entity.HasOne(d => d.ReplyToMessage).WithMany(p => p.InverseReplyToMessage)
+                .HasForeignKey(d => d.ReplyToMessageId)
+                .HasConstraintName("FK_Message_Message");
         });
 
         modelBuilder.Entity<Role>(entity =>

@@ -22,18 +22,25 @@ namespace backend.features.chat
 
 
             var messages = await dbContext.Messages
-            .AsNoTracking()
-            .Where(m => m.SenderId == senderId && m.ReceiverId == receiverId || m.SenderId == receiverId && m.ReceiverId == senderId)
-            .OrderBy(m => m.CreatedAt)
-            .Select(m => new
-            {
-                id = m.Id,
-                senderId = m.SenderId,
-                text = m.Content,
-                time = m.CreatedAt
+                .AsNoTracking()
+                .Where(m => (m.SenderId == senderId && m.ReceiverId == receiverId) || (m.SenderId == receiverId && m.ReceiverId == senderId))
+                .OrderBy(m => m.CreatedAt)
+                .Select(m => new
+                {
+                    id = m.Id,
+                    senderId = m.SenderId,
+                    text = m.Content,
+                    mediaUrl = m.MediaUrl,
+                    time = m.CreatedAt,
 
-            })
-            .ToListAsync(cancellationToken);
+                    replyTo = m.ReplyToMessage == null ? null : new
+                    {
+                        id = m.ReplyToMessage.Id,
+                        text = m.ReplyToMessage.Content,
+                        mediaUrl = m.ReplyToMessage.MediaUrl
+                    }
+                }).ToListAsync(cancellationToken);
+
 
             return new Result { Status = StatusCodes.Status200OK, Data = messages };
         }

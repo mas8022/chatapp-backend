@@ -4,6 +4,7 @@ using backend.common;
 using backend.common.utils;
 using backend.model;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.hubs.chat
 {
@@ -26,24 +27,41 @@ namespace backend.hubs.chat
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
         }
 
-        public async Task SendMessage(string? message, int receiverId, string? mediaUrl = null)
+
+        public async Task SendMessage(string? message, int receiverId, string? mediaUrl = null, int? replyToMessageId = null)
         {
-
-
             if (string.IsNullOrWhiteSpace(message) && string.IsNullOrWhiteSpace(mediaUrl))
                 return;
+
+            var currentUserIdInt = Convert.ToInt32(CurrentUserId);
 
             var entity = new Message
             {
                 Content = message?.Trim(),
                 MediaUrl = mediaUrl,
                 ReceiverId = receiverId,
-                SenderId = Convert.ToInt32(CurrentUserId),
+                SenderId = currentUserIdInt,
+                ReplyToMessageId = replyToMessageId,
                 CreatedAt = DateTime.UtcNow
             };
 
             dbContext.Messages.Add(entity);
             await dbContext.SaveChangesAsync();
+
+            object? replyToDto = null;
+            if (entity.ReplyToMessageId.HasValue)
+            {
+                replyToDto = await dbContext.Messages
+                    .AsNoTracking()
+                    .Where(m => m.Id == entity.ReplyToMessageId.Value)
+                    .Select(m => new
+                    {
+                        id = m.Id,
+                        text = m.Content,
+                        mediaUrl = m.MediaUrl
+                    })
+                    .FirstOrDefaultAsync();
+            }
 
             var messageDto = new
             {
@@ -51,15 +69,19 @@ namespace backend.hubs.chat
                 senderId = entity.SenderId,
                 text = entity.Content,
                 mediaUrl = entity.MediaUrl,
-                time = entity.CreatedAt.ToString("o")
+                time = entity.CreatedAt,
+                replyTo = replyToDto  
             };
 
-            string roomName = GetPrivateRoomName(Convert.ToInt32(CurrentUserId), receiverId);
+            string roomName = GetPrivateRoomName(currentUserIdInt, receiverId);
 
             await Clients.Group(roomName).SendAsync("ReceiveNewMessage", messageDto);
 
             await Clients.User(receiverId.ToString())
                 .SendAsync("ReceiveNewMessage", messageDto);
         }
+
+
+
     }
 }

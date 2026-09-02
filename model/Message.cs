@@ -18,4 +18,8 @@ public partial class Message
     public int? ReplyToMessageId { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public virtual ICollection<Message> InverseReplyToMessage { get; set; } = new List<Message>();
+
+    public virtual Message? ReplyToMessage { get; set; }
 }
