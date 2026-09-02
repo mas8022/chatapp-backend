@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using backend.features.users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.features.user
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsersController(UsersService usersService) : ControllerBase
     {
         [HttpGet("search")]

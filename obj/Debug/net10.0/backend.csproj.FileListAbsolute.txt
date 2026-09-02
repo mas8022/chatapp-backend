@@ -172,3 +172,6 @@ C:\Users\M.A.S\Desktop\chatapp\backend\obj\Debug\net10.0\backend.genruntimeconfi
 C:\Users\M.A.S\Desktop\chatapp\backend\obj\Debug\net10.0\ref\backend.dll
 C:\Users\M.A.S\Desktop\chatapp\backend\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\Users\M.A.S\Desktop\chatapp\backend\bin\Debug\net10.0\Microsoft.Bcl.Cryptography.dll
+C:\Users\M.A.S\Desktop\chatapp\backend\obj\Debug\net10.0\backend.sourcelink.json
+C:\Users\M.A.S\Desktop\chatapp\backend\bin\Debug\net10.0\AWSSDK.Core.dll
+C:\Users\M.A.S\Desktop\chatapp\backend\bin\Debug\net10.0\AWSSDK.S3.dll

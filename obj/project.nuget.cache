@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "20AQs5k7VLU=",
+  "dgSpecHash": "oO1R0MkFurI=",
   "success": true,
   "projectFilePath": "C:\\Users\\M.A.S\\Desktop\\chatapp\\backend\\backend.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\M.A.S\\.nuget\\packages\\awssdk.core\\4.0.102.1\\awssdk.core.4.0.102.1.nupkg.sha512",
+    "C:\\Users\\M.A.S\\.nuget\\packages\\awssdk.s3\\4.0.102.4\\awssdk.s3.4.0.102.4.nupkg.sha512",
     "C:\\Users\\M.A.S\\.nuget\\packages\\azure.core\\1.50.0\\azure.core.1.50.0.nupkg.sha512",
     "C:\\Users\\M.A.S\\.nuget\\packages\\azure.identity\\1.17.1\\azure.identity.1.17.1.nupkg.sha512",
     "C:\\Users\\M.A.S\\.nuget\\packages\\fluentvalidation\\12.1.1\\fluentvalidation.12.1.1.nupkg.sha512",

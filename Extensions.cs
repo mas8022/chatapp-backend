@@ -99,7 +99,7 @@ namespace backend.Extensions
 
             services.AddSignalR();
 
-
+            services.AddHttpContextAccessor();
 
             return services;
 

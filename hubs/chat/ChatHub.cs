@@ -1,74 +1,54 @@
 using System;
-using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
+using backend.common;
+using backend.common.services;
+using backend.common.utils;
 using backend.model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 
 namespace backend.hubs.chat
 {
     [Authorize]
-    public class ChatHub(AppDbContext dbContext) : Hub
+    public partial class ChatHub(
+        AppDbContext dbContext,
+        CurrentUserService user,
+        OnlineUsersService onlineUsersService
+    ) : Hub
     {
-        public async Task SendMessage(string message, int receiverId)
+        private int? CurrentUserId => user?.UserId;
+
+        private static string GetPrivateRoomName(int user1, int user2)
         {
+            int min = Math.Min(user1, user2);
+            int max = Math.Max(user1, user2);
+            return $"room_{min}_{max}";
+        }
 
-
-            if (string.IsNullOrWhiteSpace(message)) return;
-
-            var senderIdClaim = Context.UserIdentifier
-                                ?? Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(senderIdClaim) || !int.TryParse(senderIdClaim, out int senderId))
+        public override async Task OnConnectedAsync()
+        {
+            if (CurrentUserId.HasValue)
             {
-                throw new HubException("User is not authenticated.");
+                await onlineUsersService.AddUserAsync(CurrentUserId.Value);
+
+                await Clients.Group($"presence_user_{CurrentUserId.Value}")
+                    .SendAsync("UserPresenceChanged", new { userId = CurrentUserId.Value, isOnline = true });
             }
 
-            var entity = new Message
+            await base.OnConnectedAsync();
+        }
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            if (CurrentUserId.HasValue)
             {
-                Content = message.Trim(),
-                ReceiverId = receiverId,
-                SenderId = senderId,
-                CreatedAt = DateTime.UtcNow
-            };
+                await onlineUsersService.RemoveUserAsync(CurrentUserId.Value);
 
-            dbContext.Messages.Add(entity);
-            await dbContext.SaveChangesAsync();
+                await Clients.Group($"presence_user_{CurrentUserId.Value}")
+                    .SendAsync("UserPresenceChanged", new { userId = CurrentUserId.Value, isOnline = false });
+            }
 
-            var conversationMessages = await dbContext.Messages
-                .AsNoTracking()
-                .Where(m => (m.SenderId == senderId && m.ReceiverId == receiverId) ||
-                            (m.SenderId == receiverId && m.ReceiverId == senderId))
-                .OrderBy(m => m.CreatedAt)
-                .Select(m => new
-                {
-                    m.Id,
-                    m.Content,
-                    m.SenderId,
-                    m.CreatedAt
-                })
-                .ToListAsync();
-
-            var messagesForSender = conversationMessages.Select(m => new
-            {
-                id = m.Id,
-                text = m.Content,
-                isMe = m.SenderId == senderId,
-                time = m.CreatedAt.ToString("HH:mm")
-            }).ToList();
-
-            var messagesForReceiver = conversationMessages.Select(m => new
-            {
-                id = m.Id,
-                text = m.Content,
-                isMe = m.SenderId == receiverId,
-                time = m.CreatedAt.ToString("HH:mm")
-            }).ToList();
-
-            await Clients.User(receiverId.ToString()).SendAsync("ReceiveMessages", messagesForReceiver);
-            await Clients.Caller.SendAsync("ReceiveMessages", messagesForSender);
+            await base.OnDisconnectedAsync(exception);
         }
     }
 }
