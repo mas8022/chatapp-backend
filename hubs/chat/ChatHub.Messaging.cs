@@ -8,11 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend.hubs.chat
 {
-    public partial class ChatHub
+    public partial class ChatHub : Hub
     {
-
-        
-
         public async Task JoinPrivateChat(int targetUserId)
         {
             string roomName = GetPrivateRoomName(Convert.ToInt32(CurrentUserId), targetUserId);
@@ -21,12 +18,11 @@ namespace backend.hubs.chat
 
         public async Task LeavePrivateChat(int targetUserId)
         {
-     
+
 
             string roomName = GetPrivateRoomName(Convert.ToInt32(CurrentUserId), targetUserId);
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
         }
-
 
         public async Task SendMessage(string? message, int receiverId, string? mediaUrl = null, int? replyToMessageId = null)
         {
@@ -70,7 +66,7 @@ namespace backend.hubs.chat
                 text = entity.Content,
                 mediaUrl = entity.MediaUrl,
                 time = entity.CreatedAt,
-                replyTo = replyToDto  
+                replyTo = replyToDto
             };
 
             string roomName = GetPrivateRoomName(currentUserIdInt, receiverId);
@@ -78,10 +74,37 @@ namespace backend.hubs.chat
             await Clients.Group(roomName).SendAsync("ReceiveNewMessage", messageDto);
 
             await Clients.User(receiverId.ToString())
-                .SendAsync("ReceiveNewMessage", messageDto);
+                .SendAsync("ReceiveLastMessage", messageDto);
         }
 
+        public async Task EditPVMessage(int messageId, string newMessage, string receiverId)
+        {
+            if (string.IsNullOrWhiteSpace(newMessage))
+                return;
 
+            var currentUserIdInt = Convert.ToInt32(CurrentUserId);
+
+            var message = await dbContext.Messages
+                .FirstOrDefaultAsync(m => m.Id == messageId && m.SenderId == currentUserIdInt);
+
+            if (message == null)
+                return;
+
+            message.Content = newMessage.Trim();
+            await dbContext.SaveChangesAsync();
+
+            var roomName = GetPrivateRoomName(currentUserIdInt, Convert.ToInt32(receiverId));
+
+            var updatedMessageDto = new
+            {
+                id = message.Id,
+                text = message.Content,
+                senderId = message.SenderId
+            };
+
+            await Clients.Group(roomName).SendAsync("UpdatePVMessage", updatedMessageDto);
+
+        }
 
     }
 }
