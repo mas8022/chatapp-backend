@@ -76,7 +76,7 @@ namespace backend.hubs.chat
             await Clients.User(receiverId.ToString())
                 .SendAsync("ReceiveLastMessage", messageDto);
         }
-
+      
         public async Task EditPVMessage(int messageId, string newMessage, string receiverId)
         {
             if (string.IsNullOrWhiteSpace(newMessage))
@@ -106,5 +106,6 @@ namespace backend.hubs.chat
 
         }
 
+        
     }
 }
