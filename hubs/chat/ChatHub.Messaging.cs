@@ -76,7 +76,7 @@ namespace backend.hubs.chat
             await Clients.User(receiverId.ToString())
                 .SendAsync("ReceiveLastMessage", messageDto);
         }
-      
+
         public async Task EditPVMessage(int messageId, string newMessage, string receiverId)
         {
             if (string.IsNullOrWhiteSpace(newMessage))
@@ -106,6 +106,29 @@ namespace backend.hubs.chat
 
         }
 
-        
+        public async Task DeletePVMessage(int messageId, string receiverId)
+        {
+            var message = await dbContext.Messages
+                .FirstOrDefaultAsync(m =>
+                    m.Id == messageId &&
+                    m.SenderId == CurrentUserId &&
+                    m.ReceiverId == Convert.ToInt32(receiverId)
+                );
+
+            if (message is null)
+                throw new HubException(
+                    "پیام پیدا نشد یا اجازه حذف آن را ندارید."
+                );
+
+            dbContext.Messages.Remove(message);
+
+            await dbContext.SaveChangesAsync();
+
+            var roomName = GetPrivateRoomName(Convert.ToInt32(CurrentUserId), Convert.ToInt32(receiverId));
+
+            await Clients.Group(roomName).SendAsync("PVMessageDeleted", messageId);
+
+        }
+
     }
 }
