@@ -14,10 +14,21 @@ namespace backend.features.chat
     public class ChatController(ChatService chatService) : ControllerBase
     {
         [HttpGet("pv-messages/{receiverId}")]
-        public async Task<IActionResult> GetPvMessages(int receiverId, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetPvMessages(
+            int receiverId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            CancellationToken cancellationToken = default)
         {
-            return Ok(await chatService.GetPvMessages(receiverId, cancellationToken));
+            return Ok(
+                await chatService.GetPvMessages(
+                    receiverId,
+                    page,
+                    pageSize,
+                    cancellationToken)
+            );
         }
+
 
         [HttpGet("contacts")]
         public async Task<IActionResult> GetConvGetContactsersations()

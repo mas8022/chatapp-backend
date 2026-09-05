@@ -12,19 +12,41 @@ namespace backend.features.chat
 {
     public class ChatService(AppDbContext dbContext, CurrentUserService currentUser)
     {
-        public async Task<Result> GetPvMessages(int receiverId, CancellationToken cancellationToken)
+        public async Task<Result> GetPvMessages(
+       int receiverId,
+       int page,
+       int pageSize,
+       CancellationToken cancellationToken)
         {
-            var senderId = currentUser.UserId;
+            var currentUserId = currentUser.UserId;
 
-            var isExistReceiver = await dbContext.Users.AnyAsync(u => u.Id == receiverId, cancellationToken);
+            // جلوگیری از مقاد  نامعتبر
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
 
-            if (!isExistReceiver) throw new NotFoundException("این کاربر پیدا نشد");
-
-
-            var messages = await dbContext.Messages
+            var query = dbContext.Messages
                 .AsNoTracking()
-                .Where(m => (m.SenderId == senderId && m.ReceiverId == receiverId) || (m.SenderId == receiverId && m.ReceiverId == senderId))
-                .OrderBy(m => m.CreatedAt)
+                .Where(m =>
+                    (m.SenderId == currentUserId &&
+                     m.ReceiverId == receiverId) ||
+
+                    (m.SenderId == receiverId &&
+                     m.ReceiverId == currentUserId)
+                );
+
+            var totalCount = await query.CountAsync(cancellationToken);
+
+            var skip = (page - 1) * pageSize;
+
+            /*
+             * چون پیام‌های جدیدتر را اول مرتب می‌کنیم،
+             * صفحه اول شامل آخرین پیام‌هاست.
+             */
+            var messages = await query
+                .OrderByDescending(m => m.CreatedAt)
+                .ThenByDescending(m => m.Id)
+                .Skip(skip)
+                .Take(pageSize)
                 .Select(m => new
                 {
                     id = m.Id,
@@ -33,18 +55,37 @@ namespace backend.features.chat
                     mediaUrl = m.MediaUrl,
                     time = m.CreatedAt,
 
-                    replyTo = m.ReplyToMessage == null ? null : new
-                    {
-                        id = m.ReplyToMessage.Id,
-                        text = m.ReplyToMessage.Content,
-                        mediaUrl = m.ReplyToMessage.MediaUrl
-                    }
-                }).ToListAsync(cancellationToken);
+                    replyTo = m.ReplyToMessage == null
+                        ? null
+                        : new
+                        {
+                            id = m.ReplyToMessage.Id,
+                            text = m.ReplyToMessage.Content,
+                            mediaUrl = m.ReplyToMessage.MediaUrl
+                        }
+                })
+                .ToListAsync(cancellationToken);
 
+            /*
+             * برای نمایش چت، پیام‌های هر صفحه باید از قدیمی به جدید باشند.
+             */
+            messages.Reverse();
 
-            return new Result { Status = StatusCodes.Status200OK, Data = messages };
+            var hasMore = skip + messages.Count < totalCount;
+
+            return new Result
+            {
+                Status = StatusCodes.Status200OK,
+                Data = new
+                {
+                    messages,
+                    page,
+                    pageSize,
+                    totalCount,
+                    hasMore
+                }
+            };
         }
-
         public async Task<Result> GetContacts()
         {
             var userId = currentUser.UserId;
