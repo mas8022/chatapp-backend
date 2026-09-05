@@ -69,6 +69,9 @@ public partial class AppDbContext : DbContext
                 .HasMaxLength(2048)
                 .IsUnicode(false)
                 .HasColumnName("avatar");
+            entity.Property(e => e.Bio)
+                .HasMaxLength(120)
+                .HasColumnName("bio");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())", "DF_User_createdAt")
                 .HasColumnType("datetime")

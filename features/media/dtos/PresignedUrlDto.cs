@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using FluentValidation;
 
 namespace backend.features.media.dtos
@@ -14,17 +14,26 @@ namespace backend.features.media.dtos
 
     public class PresignedUrlDtoValidator : AbstractValidator<PresignedUrlDto>
     {
-        // لیست پسوندهای مجاز به همراه Content-Typeهای متناظر
+        // لیست پسوندهای مجاز (تصویر، ویدیو و فایل‌های صوتی/ویس)
         private static readonly string[] AllowedExtensions =
         [
+            // تصاویر
             ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg",
-        ".mp4", ".mov", ".webm", ".mkv", ".avi"
+            // ویدیوها
+            ".mp4", ".mov", ".webm", ".mkv", ".avi",
+            // فایل‌های صوتی و ویس
+            ".mp3", ".wav", ".ogg", ".m4a", ".aac"
         ];
 
+        // لیست Content-Typeهای مجاز
         private static readonly string[] AllowedContentTypes =
         [
+            // تصاویر
             "image/jpeg", "image/pjpeg", "image/png", "image/webp", "image/gif", "image/svg+xml",
-        "video/mp4", "video/quicktime", "video/webm", "video/x-matroska", "video/mkv", "video/x-msvideo"
+            // ویدیوها
+            "video/mp4", "video/quicktime", "video/webm", "video/x-matroska", "video/mkv", "video/x-msvideo",
+            // فایل‌های صوتی
+            "audio/webm", "audio/ogg", "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/mp4", "audio/aac", "audio/x-m4a"
         ];
 
         public PresignedUrlDtoValidator()
@@ -33,7 +42,7 @@ namespace backend.features.media.dtos
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage("نام فایل نمی‌تواند خالی باشد.")
                 .MaximumLength(255).WithMessage("نام فایل بیش از حد طولانی است.")
-                .Must(HaveValidExtension).WithMessage("فرمت فایل ارسالی مجاز نیست (فقط عکس و ویدیو).");
+                .Must(HaveValidExtension).WithMessage("فرمت فایل ارسالی مجاز نیست.");
 
             RuleFor(x => x.ContentType)
                 .Cascade(CascadeMode.Stop)
@@ -60,9 +69,7 @@ namespace backend.features.media.dtos
         {
             if (string.IsNullOrWhiteSpace(contentType)) return false;
 
-            // حذف فاصله‌ها و پارامترهای اضافی مثل charset=utf-8
             var cleanType = contentType.Split(';')[0].Trim().ToLowerInvariant();
-
             return AllowedContentTypes.Contains(cleanType);
         }
     }

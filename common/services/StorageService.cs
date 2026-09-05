@@ -11,21 +11,73 @@ public class StorageService
 
     public StorageService(IConfiguration config)
     {
+        var endpoint = config.GetConnectionString("LIARA_ENDPOINT");
+        var accessKey = config.GetConnectionString("LIARA_ACCESS_KEY");
+        var secretKey = config.GetConnectionString("LIARA_SECRET_KEY");
+
         var s3Config = new AmazonS3Config
         {
-            ServiceURL = config["Liara:Endpoint"],
+            ServiceURL = endpoint,
             ForcePathStyle = true
         };
 
-        _s3Client = new AmazonS3Client(config["Liara:AccessKey"], config["Liara:SecretKey"], s3Config);
-        _bucketName = config["Liara:BucketName"]!;
-        _publicEndpoint = config["Liara:PublicDomain"] ?? $"{config["Liara:Endpoint"]}/{_bucketName}";
+        _s3Client = new AmazonS3Client(
+            accessKey,
+            secretKey,
+            s3Config
+        );
+
+        _bucketName = config.GetConnectionString("LIARA_BUCKET_NAME")!;
+        _publicEndpoint = $"{endpoint}/{_bucketName}";
     }
 
-    public (string uploadUrl, string fileUrl) GeneratePreSignedUrl(string fileName, string contentType)
+    public async Task<string> UploadFileAsync(
+        IFormFile file,
+        string folder = "avatars"
+    )
     {
+        if (file == null || file.Length == 0)
+            throw new ArgumentException("File is empty.");
 
-        var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(fileName)}";
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        var allowedExtensions = new[]
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp"
+        };
+
+        if (!allowedExtensions.Contains(extension))
+            throw new ArgumentException("Only jpg, jpeg, png and webp files are allowed.");
+
+        var fileName = $"{Guid.NewGuid():N}{extension}";
+        var objectKey = $"{folder}/{fileName}";
+
+        await using var stream = file.OpenReadStream();
+
+        var request = new PutObjectRequest
+        {
+            BucketName = _bucketName,
+            Key = objectKey,
+            InputStream = stream,
+            ContentType = file.ContentType,
+            AutoCloseStream = false
+        };
+
+        await _s3Client.PutObjectAsync(request);
+
+        return $"{_publicEndpoint}/{objectKey}";
+    }
+
+    public (string uploadUrl, string fileUrl) GeneratePreSignedUrl(
+        string fileName,
+        string contentType
+    )
+    {
+        var uniqueFileName =
+            $"{Guid.NewGuid()}_{Path.GetFileName(fileName)}";
 
         var request = new GetPreSignedUrlRequest
         {

@@ -17,5 +17,7 @@ public partial class User
 
     public string? Avatar { get; set; }
 
+    public string? Bio { get; set; }
+
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }
