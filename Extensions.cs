@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace backend.Extensions
 {
@@ -19,6 +20,12 @@ namespace backend.Extensions
     {
         public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
         {
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
             services.AddControllers();
 
             services.AddCors(options =>

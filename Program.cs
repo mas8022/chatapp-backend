@@ -8,6 +8,8 @@ builder.Services.AddApi(builder.Configuration);
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
