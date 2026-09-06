@@ -25,9 +25,15 @@ namespace backend.features.users
                 };
             }
 
-            var users = await dbContext.Users.AsNoTracking().Where(u =>
-             u.Phone.Contains(search) || u.Username.Contains(search) || u.Name.Contains(search)
-             ).ToListAsync();
+            var users = await dbContext.Users.AsNoTracking().Select(u => new
+            {
+                u.Id,
+                u.Phone,
+                u.Username,
+                u.Name,
+                u.Avatar
+            }).Where(u => u.Id != currentUser.UserId &&
+                    (u.Phone.Contains(search) || u.Username.Contains(search) || u.Name.Contains(search))).Take(5).ToListAsync();
 
             return new Result
             {
@@ -56,7 +62,7 @@ namespace backend.features.users
 
         }
 
-        public async Task<Result> GetProfile()
+        public async Task<Result> GetMyProfile()
         {
             var user = await dbContext.Users.AsNoTracking().Select(u => new
             {
@@ -102,7 +108,24 @@ namespace backend.features.users
             };
         }
 
+        public async Task<Result> GetUserProfileById(int id)
+        {
 
+            var user = await dbContext.Users.AsNoTracking().Select(u => new
+            {
+                u.Id,
+                u.Username,
+                u.Name,
+                u.Avatar,
+                u.Phone,
+                u.Bio
+            }).FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null) throw new NotFoundException("این کاربر پیدا نشد");
+
+            return new Result { Status = StatusCodes.Status200OK, Data = user };
+        }
 
     }
+
 }

@@ -25,11 +25,11 @@ namespace backend.features.user
         {
             return Ok(await usersService.GetUserById(id));
         }
-   
-        [HttpGet("profile")]
-        public async Task<IActionResult> GetProfile()
+
+        [HttpGet("my-profile")]
+        public async Task<IActionResult> GetMyProfile()
         {
-            return Ok(await usersService.GetProfile());
+            return Ok(await usersService.GetMyProfile());
         }
 
         [HttpPut("edit-profile")]
@@ -37,5 +37,13 @@ namespace backend.features.user
         {
             return Ok(await usersService.EditProfile(dto));
         }
+
+
+        [HttpGet("user-profile/{id}")]
+        public async Task<IActionResult> GetUserProfileById(int id)
+        {
+            return Ok(await usersService.GetUserProfileById(id));
+        }
+
     }
 }

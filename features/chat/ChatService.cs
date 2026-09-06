@@ -13,14 +13,13 @@ namespace backend.features.chat
     public class ChatService(AppDbContext dbContext, CurrentUserService currentUser)
     {
         public async Task<Result> GetPvMessages(
-       int receiverId,
-       int page,
-       int pageSize,
-       CancellationToken cancellationToken)
+            int receiverId,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken)
         {
             var currentUserId = currentUser.UserId;
 
-            // جلوگیری از مقاد  نامعتبر
             page = Math.Max(page, 1);
             pageSize = Math.Clamp(pageSize, 1, 100);
 
@@ -38,10 +37,6 @@ namespace backend.features.chat
 
             var skip = (page - 1) * pageSize;
 
-            /*
-             * چون پیام‌های جدیدتر را اول مرتب می‌کنیم،
-             * صفحه اول شامل آخرین پیام‌هاست.
-             */
             var messages = await query
                 .OrderByDescending(m => m.CreatedAt)
                 .ThenByDescending(m => m.Id)
@@ -66,9 +61,6 @@ namespace backend.features.chat
                 })
                 .ToListAsync(cancellationToken);
 
-            /*
-             * برای نمایش چت، پیام‌های هر صفحه باید از قدیمی به جدید باشند.
-             */
             messages.Reverse();
 
             var hasMore = skip + messages.Count < totalCount;
@@ -86,11 +78,11 @@ namespace backend.features.chat
                 }
             };
         }
+
         public async Task<Result> GetContacts()
         {
             var userId = currentUser.UserId;
 
-            // ۱. استخراج شناسه آخرین پیام هر چت (به صورت کاملاً بهینه در SQL)
             var latestMessageIds = await dbContext.Messages
                 .AsNoTracking()
                 .Where(m => m.SenderId == userId || m.ReceiverId == userId)
@@ -98,14 +90,13 @@ namespace backend.features.chat
                 .Select(g => g.Max(m => m.Id))
                 .ToListAsync();
 
-            // ۲. دریافت اطلاعات آخرین پیام و کاربر متناظر
             var contacts = await dbContext.Messages
                 .AsNoTracking()
                 .Where(m => latestMessageIds.Contains(m.Id))
                 .Select(m => new
                 {
                     ContactId = m.SenderId == userId ? m.ReceiverId : m.SenderId,
-                    LastMessage = m.Content,
+                    LastMessage = m.Content ?? m.MediaUrl,
                     LastMessageTime = m.CreatedAt
                 })
                 .Join(
