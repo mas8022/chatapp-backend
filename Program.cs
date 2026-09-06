@@ -5,37 +5,6 @@ using Microsoft.Data.SqlClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
-////////////////////////////////////////////////////////////
-var connectionString =
-    builder.Configuration.GetConnectionString("DB_URL")
-    ?? throw new InvalidOperationException(
-        "ConnectionStrings:DB_URL is missing.");
-
-var sqlInfo = new SqlConnectionStringBuilder(connectionString);
-
-Console.WriteLine(
-    $"SQL configuration: Server={sqlInfo.DataSource}, Database={sqlInfo.InitialCatalog}, User={sqlInfo.UserID}");
-
-////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 builder.Services.AddApi(builder.Configuration);
 
 var app = builder.Build();
@@ -54,7 +23,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// await DatabaseSeeder.SeedAsync(app.Services);
+await DatabaseSeeder.SeedAsync(app.Services);
 
 app.MapHub<ChatHub>("/hub/chat");
 
