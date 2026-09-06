@@ -14,10 +14,8 @@ var connectionString =
 var sqlInfo = new SqlConnectionStringBuilder(connectionString);
 
 Console.WriteLine(
-    "SQL configuration: Server={Server}, Database={Database}, User={User}",
-    sqlInfo.DataSource,
-    sqlInfo.InitialCatalog,
-    sqlInfo.UserID);
+    $"SQL configuration: Server={sqlInfo.DataSource}, Database={sqlInfo.InitialCatalog}, User={sqlInfo.UserID}");
+
 ////////////////////////////////////////////////////////////
 
 
